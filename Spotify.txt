@@ -1,0 +1,66 @@
+ETL project.
+
+1. Extract data from Spotify API:
+	a.Go to https://developer.spotify.com/dashboard?	gad=1&gclid=Cj0KCQjwwISlBhD6ARIsAESAmp5LBsuCo518nDEfhtptdWvmF7lppQILz0atU_tfvWxmJnph882TwjwaAlB9EALw_wcB&gclsrc=aw.ds
+	Create an app.Note the client id and client secret from dashboard>>your app(spotify_etl_pipeline)>>settings
+	Client id:8fa41dab99cc4b7a937f4b41da080604
+	Client Secret: 0c1f3b713ea6429f94e50c5cbdafa49c
+
+	b.Follow Jupyter notebook
+	c.Go to AWS create account
+
+
+2.AWS
+	a.	Create S3 bucket bucket to store data.(It has the looks and feels of a folder)
+	Amazon S3 or Amazon Simple Storage Service is a service offered by Amazon Web Services that provides object storage 	through a web service interface. Amazon S3 uses the same scalable storage infrastructure that Amazon.com uses to run 	its e-commerce network.
+	**Bucket name should be unique
+	**We will go for North Virginia region, latest feature of AWS are first generaly published at this region.
+	
+	b.	Deploy code to LAMBDA: It is compute service to trigger event, deploy or run code.
+	** There are certain informaton like credentials,password  which you want to map in the code but dont want to make it 	visible to the viewer hence we us env. variables where we store these values to a variable/object etc and use this 		variable/object instead in the code.
+	** lamda>function>spotify_api_data_extract.]>configuration>environment variable . Here we have dumped client id and 	client secret.
+	**Lambda does not support all of the function/packages that we require.To use these external function we need lambda 		layer.We need to mannualy upload the spotipy installation file.(in local we can install it !pip install spotipy.)
+	lambda>layer>create layer>[upload the file here]>[this should be added as custom layer]
+
+	c.	boto3: refer the code
+	lamda>function>spotify_api_data_extract>code
+
+	d.	IAM services: When two services want to interact with each other we give them the IAM roles.
+	Default Role:lamda>function>spotify_api_data_extract.>configuration>permission>execution role (click it), you can see 	the policy name, it has basic execution role.Now add permission to it. 
+	Add permission>Attach policies>AmazonS3FullAccess
+
+	e.	Time Out error
+	lamda>function>spotify_api_data_extract.>configuration>General Configuration>Edit [increase the time out duration to 	1 min 30 sec or whatever is required]
+	
+
+3.WORKFLOW
+
+a.We have extracted our data in jupyter note book
+b.We are storing the data Amazon S3> Buckets> [my bucket]>raw_data>to_processed	.This will store all the json file as it gets updated(historical data).Frome here we pick file to process.
+c.Once the data is processed it gets stored in Amazon S3> Buckets> [my bucket]>raw_data>processed
+d.Go to lamda>function>spotify_transformation_load_function , view the code. The to_processed folder will have too many files 
+with date timestamp updated periodicaly(if triggers are in placed) or manually.We collect these file in this code.Move it to processed folder and and delete them in to_processed folder.
+
+e.Now we will apply TRIGGERS
+	i.Go to Lambda>Functions>spotify_api_data_extract..add triggers... Source:CloudWatchEvent...create new rules...give 	the name and schedule the expression:rate(1 minute)
+	ii.Go to Lambda>Functions>spotify_transformation_load_function....add triggers...source:S3 WHY? I want to create 	trigger when an event occurs at the bucket level of S3.....prefix:should be the folder path	(raw_data>to_processed)inside the bucket and suffix:should ve the file extension
+	iii.Now we need to give this lambda function the permission to access the entire lambda environment(we have 	two lambda function and we want them to interact with each other)..attach AWSLambdaRole permisson.
+	......now delete the trigger as it might apply some charges.
+	iv. Delete all the files from all the folders in bucket.add index=False to transform function in to_csv statment.It 	is required so that the Crawler can read your file.
+
+f.Create Crawler(creates tables on basis of schema info extracted)
+	i.Go to AWS Crawler>crawlers>create crawler>add name>>add data source(browse your project)>transformed data>select 	song folder (at the end of the path in S3 add a '/')
+	ii.Choose IAM Role..create one..spotify-s3-glue-roles
+	iii.Click next to create database..add database>give a name(spotify_db) >select this db from drop down...create 	crawler..run crawler
+	iv. In the left ..go to tables..you can see the detail of the tables/schema created.
+	
+g.Go to Athena
+	1.Go to the selected table and click preview...you wont be able to see the output..you need to first add the target 	location...your target location will be the bucket name.
+
+h.Some times the glue cannot capture the column name properly ..AWS Glue>Tables>artist_data under schema the column is is clo0,col1,col3...names are not captured correctly..in this case we need to change it manually. Edit Schema as JSON. Advance>property>Action>Edit Table>Add(skip.header.line.count and enter value as 1)This says...skip the first row as it as it is the header.save this and go to Athena>artist>preview
+
+darshilparmar git
+
+	
+
+
