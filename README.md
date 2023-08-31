@@ -13,25 +13,25 @@ ETL project.
 
 2.AWS
 	a.	Create S3 bucket bucket to store data.(It has the looks and feels of a folder)
-	Amazon S3 or Amazon Simple Storage Service is a service offered by Amazon Web Services that provides object storage 	through a web service interface. Amazon S3 uses the same scalable storage infrastructure that Amazon.com uses to run 	its e-commerce network.
+	Amazon S3 or Amazon Simple Storage Service is a service offered by Amazon Web Services that provides object storage 	through a web service interface. Amazon S3 uses the same scalable storage 		infrastructure that Amazon.com uses to run 	its e-commerce network.
 	**Bucket name should be unique
 	**We will go for North Virginia region, latest feature of AWS are first generaly published at this region.
-	
-	b.	Deploy code to LAMBDA: It is compute service to trigger event, deploy or run code.
-	** There are certain informaton like credentials,password  which you want to map in the code but dont want to make it 	visible to the viewer hence we us env. variables where we store these values to a variable/object etc and use this 		variable/object instead in the code.
+ 	b.	Deploy code to LAMBDA: It is compute service to trigger event, deploy or run code.
+	** There are certain informaton like credentials,password  which you want to map in the code but dont want to make it 	visible to the viewer hence we us env. variables where we store these values to a 	variable/object etc and use this 		variable/object instead in the code.
 	** lamda>function>spotify_api_data_extract.]>configuration>environment variable . Here we have dumped client id and 	client secret.
-	**Lambda does not support all of the function/packages that we require.To use these external function we need lambda 		layer.We need to mannualy upload the spotipy installation file.(in local we can install it !pip install spotipy.)
+	**Lambda does not support all of the function/packages that we require.To use these external function we need lambda 		layer.We need to mannualy upload the spotipy installation file.(in local we 	can install it !pip install spotipy.)
 	lambda>layer>create layer>[upload the file here]>[this should be added as custom layer]
-
-	c.	boto3: refer the code
+ 	c.	boto3: refer the code
 	lamda>function>spotify_api_data_extract>code
-
-	d.	IAM services: When two services want to interact with each other we give them the IAM roles.
+ 	d.	IAM services: When two services want to interact with each other we give them the IAM roles.
 	Default Role:lamda>function>spotify_api_data_extract.>configuration>permission>execution role (click it), you can see 	the policy name, it has basic execution role.Now add permission to it. 
 	Add permission>Attach policies>AmazonS3FullAccess
-
-	e.	Time Out error
+ 	e.	Time Out error
 	lamda>function>spotify_api_data_extract.>configuration>General Configuration>Edit [increase the time out duration to 	1 min 30 sec or whatever is required]
+
+	
+	
+	
 	
 
 3.WORKFLOW
@@ -60,7 +60,5 @@ g.Go to Athena
 
 h.Some times the glue cannot capture the column name properly ..AWS Glue>Tables>artist_data under schema the column is is clo0,col1,col3...names are not captured correctly..in this case we need to change it manually. Edit Schema as JSON. Advance>property>Action>Edit Table>Add(skip.header.line.count and enter value as 1)This says...skip the first row as it as it is the header.save this and go to Athena>artist>preview
 
-d
-	
 
 
